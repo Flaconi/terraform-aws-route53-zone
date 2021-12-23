@@ -90,5 +90,5 @@ resource "aws_route53_zone" "private_root_zones" {
     var.tags
   )
 
-  depends_on = [data.aws_vpc.default, data.aws_region.current]
+  depends_on = [data.aws_region.current]
 }
