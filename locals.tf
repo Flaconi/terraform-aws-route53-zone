@@ -118,15 +118,15 @@ locals {
   # ----------------
   # var.public_delegated_tertiary_zones = [
   #   {
-  #     name = "intranet.example.tld",
-  #     root = "example.tld",
+  #     name = "division.intranet.example.tld",
+  #     root = "intranet.example.tld",
   #     nameservers = [],
   #     ns_ttl = 30,
   #     delegation_set = "deleg-name",
   #   },
   #   {
-  #     name = "private.example.tld",
-  #     root = "example.tld",
+  #     name = "division.private.example.tld",
+  #     root = "private.example.tld",
   #     nameservers = ["1,1.1.1", "2.2.2.2", "3.3.3.3", "4.4.4.4"],
   #     delegation_set = null,
   #     ns_ttl = 30,
@@ -136,29 +136,29 @@ locals {
   # Transforms into:
   # ----------------
   # local.public_delegated_tertiary_zones = {
-  #   "intranet.example1.tld" {
-  #     "name" = "intranet.example.tld"
+  #   "division.intranet.example.tld" {
+  #     "name" = "division.intranet.example.tld"
   #     "parent" = "example.tld",
   #     "deleg_id" = "N0XXXXXXXXXXXXX"
   #     "deleg_name" = "deleg-name"
   #   },
-  #   "private.example1.tld" {
-  #     "name" = "private.example.tld"
-  #     "parent" = "example.tld",
+  #   "division.private.example.tld" {
+  #     "name" = "division.private.example.tld"
+  #     "parent" = "private.example.tld",
   #     "deleg_id" = null
   #     "deleg_name" = ""
   #   },
   # }
   # local.public_delegated_tertiary_default_ns_records = {
-  #   "intranet.example1.tld" {
-  #     "name" = "intranet.example.tld"
-  #     "parent" = "example.tld",
+  #   "division.intranet.example.tld" {
+  #     "name" = "division.intranet.example.tld"
+  #     "parent" = "intranet.example.tld",
   #   },
   # }
   # local.public_delegated_tertiary_custom_ns_records = {
-  #   "private.example1.tld" {
-  #     "name" = "private.example.tld"
-  #     "parent" = "example.tld",
+  #   "division.private.example.tld" {
+  #     "name" = "division.private.example.tld"
+  #     "parent" = "private.example.tld",
   #     "nameservers" = ["1,1.1.1", "2.2.2.2", "3.3.3.3", "4.4.4.4"],
   #     "ns_ttl" = 30,
   #   },
