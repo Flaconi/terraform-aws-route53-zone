@@ -91,7 +91,7 @@ resource "aws_route53_zone" "public_delegated_tertiary_zones" {
 resource "aws_route53_record" "public_delegated_tertiary_ns_records" {
   for_each = local.public_delegated_tertiary_ns_records
 
-  zone_id = aws_route53_zone.public_root_zones[each.value.parent]["id"]
+  zone_id = aws_route53_zone.public_delegated_secondary_zones[each.value.parent]["id"]
   name    = each.value.name
   type    = "NS"
   ttl     = each.value.ns_ttl
