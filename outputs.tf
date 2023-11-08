@@ -37,12 +37,12 @@ output "public_delegated_secondary_ns_records" {
 # -------------------------------------------------------------------------------------------------
 
 output "public_delegated_tertiary_zones" {
-  value       = aws_route53_zone.public_delegated_secondary_zones
+  value       = aws_route53_zone.public_delegated_tertiary_zones
   description = "Created public delegated tertiary zones."
 }
 
 output "public_delegated_tertiary_ns_records" {
-  value       = aws_route53_record.public_delegated_secondary_ns_records
+  value       = aws_route53_record.public_delegated_tertiary_ns_records
   description = "Created NS records in your root zone for delegated tertiary zones."
 }
 
