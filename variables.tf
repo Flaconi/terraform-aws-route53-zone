@@ -47,10 +47,10 @@ variable "public_delegated_tertiary_zones" {
 variable "private_root_zones" {
   type = list(object({
     name = string,
-    vpc_ids = list(object({
+    vpc_ids = optional(list(object({
       id     = string,
       region = string,
-    })),
+    })), []),
   }))
   default     = []
   description = "Private Route53 root zone (also allows subdomain if this is your root starting point). Note, by default the default VPC will always be attached, even if vpc_ids or vpc_tags are empty."
