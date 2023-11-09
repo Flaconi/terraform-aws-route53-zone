@@ -20,8 +20,8 @@ variable "public_delegated_secondary_zones" {
   type = list(object({
     name           = string,
     parent         = string,
-    ns_ttl         = number,
-    ns_list        = list(string),
+    ns_ttl         = optional(number, 3600),
+    ns_list        = optional(list(string), []),
     delegation_set = optional(string),
   }))
   default     = []
@@ -32,8 +32,8 @@ variable "public_delegated_tertiary_zones" {
   type = list(object({
     name           = string,
     parent         = string,
-    ns_ttl         = number,
-    ns_list        = list(string),
+    ns_ttl         = optional(number, 3600),
+    ns_list        = optional(list(string), []),
     delegation_set = optional(string),
   }))
   default     = []
