@@ -15,12 +15,10 @@ module "aws_route53zone" {
 
   public_root_zones = [
     {
-      name           = "example.com",
-      delegation_set = null,
+      name = "example.com",
     },
     {
-      name           = "example.org",
-      delegation_set = null,
+      name = "example.org",
     },
   ]
 
