@@ -215,6 +215,7 @@ No modules.
 |------|-------------|
 | <a name="output_delegation_sets"></a> [delegation\_sets](#output\_delegation\_sets) | Created delegation sets. |
 | <a name="output_private_root_zones"></a> [private\_root\_zones](#output\_private\_root\_zones) | Created private root zones. |
+| <a name="output_public_all_zones"></a> [public\_all\_zones](#output\_public\_all\_zones) | All created public zones. |
 | <a name="output_public_delegated_secondary_ns_records"></a> [public\_delegated\_secondary\_ns\_records](#output\_public\_delegated\_secondary\_ns\_records) | Created NS records in your root zone for delegated secondary zones. |
 | <a name="output_public_delegated_secondary_zones"></a> [public\_delegated\_secondary\_zones](#output\_public\_delegated\_secondary\_zones) | Created public delegated secondary zones. |
 | <a name="output_public_delegated_tertiary_ns_records"></a> [public\_delegated\_tertiary\_ns\_records](#output\_public\_delegated\_tertiary\_ns\_records) | Created NS records in your root zone for delegated tertiary zones. |

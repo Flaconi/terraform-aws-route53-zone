@@ -8,6 +8,20 @@ output "delegation_sets" {
 
 
 # -------------------------------------------------------------------------------------------------
+# Public Route53 Zones (All)
+# -------------------------------------------------------------------------------------------------
+
+output "public_all_zones" {
+  value = merge(
+    aws_route53_zone.public_root_zones,
+    aws_route53_zone.public_delegated_secondary_zones,
+    aws_route53_zone.public_delegated_tertiary_zones
+  )
+  description = "All created public zones."
+}
+
+
+# -------------------------------------------------------------------------------------------------
 # Public Route53 Root Zones
 # -------------------------------------------------------------------------------------------------
 
