@@ -23,6 +23,7 @@ resource "aws_route53_zone" "public_root_zones" {
     { "Name" = each.value.name },
     { "DelegationSetId" = each.value.deleg_id },
     { "DelegationSetName" = each.value.deleg_name },
+    each.value.tags,
     var.tags
   )
 
@@ -46,6 +47,7 @@ resource "aws_route53_zone" "public_delegated_secondary_zones" {
     { "Parent" = each.value.parent },
     { "DelegationSetId" = each.value.deleg_id },
     { "DelegationSetName" = each.value.deleg_name },
+    each.value.tags,
     var.tags
   )
 
@@ -81,6 +83,7 @@ resource "aws_route53_zone" "public_delegated_tertiary_zones" {
     { "Parent" = each.value.parent },
     { "DelegationSetId" = each.value.deleg_id },
     { "DelegationSetName" = each.value.deleg_name },
+    each.value.tags,
     var.tags
   )
 
@@ -121,6 +124,7 @@ resource "aws_route53_zone" "private_root_zones" {
 
   tags = merge(
     { "Name" = each.value.name },
+    each.value.tags,
     var.tags
   )
 
