@@ -19,6 +19,9 @@ module "aws_route53zone" {
     },
     {
       name = "example.org",
+      tags = {
+        tag-name = "some-value"
+      }
     },
   ]
 
