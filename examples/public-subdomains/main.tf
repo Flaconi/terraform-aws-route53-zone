@@ -29,6 +29,9 @@ module "aws_route53zone" {
     {
       name   = "internal.example.org",
       parent = "example.org",
+      tags = {
+        tag-name = "some-value"
+      }
     },
     {
       name    = "private.example.org",
