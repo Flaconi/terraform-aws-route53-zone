@@ -22,6 +22,9 @@ module "aws_route53zone" {
     {
       name    = "private.local",
       vpc_ids = [{ "id" : "vpc-xxxxxxxxxx", "region" : "eu-central-1" }],
+      vpc_association_authorization = [
+        "Z0123456789ABCDEFGHIJ"
+      ]
       tags = {
         tag-name = "some-value"
       }

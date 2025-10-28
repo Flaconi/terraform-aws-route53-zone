@@ -54,7 +54,8 @@ variable "private_root_zones" {
       id     = string,
       region = string,
     })), []),
-    tags = optional(map(string), {})
+    vpc_association_authorization = optional(set(string))
+    tags                          = optional(map(string), {})
   }))
   default     = []
   description = "Private Route53 root zone (also allows subdomain if this is your root starting point). Note, by default the default VPC will always be attached, even if vpc_ids or vpc_tags are empty."
