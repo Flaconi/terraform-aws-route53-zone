@@ -2,12 +2,15 @@ ifneq (,)
 .error This Makefile requires GNU Make.
 endif
 
-CURRENT_DIR = $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
-TF_EXAMPLES = $(sort $(dir $(wildcard $(CURRENT_DIR)examples/*/)))
+.PHONY: help gen lint test _gen-main _gen-examples _gen-modules _lint-files _lint-fmt _lint-json _pull-tf _pull-tfdocs _pull-fl _pull-jl
 
+CURRENT_DIR     = $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+TF_EXAMPLES     = $(sort $(dir $(wildcard $(CURRENT_DIR)examples/*/)))
+TF_MODULES      = $(sort $(dir $(wildcard $(CURRENT_DIR)modules/*/)))
+FL_IGNORE_PATHS = .git/,.github/,.terraform/,.idea/
 
 # -------------------------------------------------------------------------------------------------
-# Image versions
+# Container versions
 # -------------------------------------------------------------------------------------------------
 TF_VERSION      = 1.3.10
 TFDOCS_VERSION  = 0.16.0-0.34
@@ -15,15 +18,22 @@ FL_VERSION      = latest-0.8
 
 
 # -------------------------------------------------------------------------------------------------
-# Image settings
+# Enable linter (file-lint, terraform fmt, jsonlint)
+# -------------------------------------------------------------------------------------------------
+LINT_FL_ENABLE = 1
+LINT_TF_ENABLE = 1
+LINT_JL_ENABLE = 1
+
+
+# -------------------------------------------------------------------------------------------------
+# terraform-docs defines
 # -------------------------------------------------------------------------------------------------
 # Adjust your delimiter here or overwrite via make arguments
 DELIM_START = <!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
 DELIM_CLOSE = <!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
 # What arguments to append to terraform-docs command
-TFDOCS_ARGS = --sort-by required
+TFDOCS_ARGS = --sort=false
 
-FL_IGNORE = .git/,.github/,*.terraform/
 
 # -------------------------------------------------------------------------------------------------
 # Default target
@@ -43,14 +53,18 @@ gen: _pull-tfdocs
 	@echo "################################################################################"
 	@$(MAKE) --no-print-directory _gen-main
 	@$(MAKE) --no-print-directory _gen-examples
+	@$(MAKE) --no-print-directory _gen-modules
 
 lint:
-	@# Lint all Terraform files
-	@echo "################################################################################"
-	@echo "# Linting"
-	@echo "################################################################################"
-	$(MAKE) --no-print-directory _lint-files
-	$(MAKE) --no-print-directory _lint-fmt
+	@if [ "$(LINT_FL_ENABLE)" = "1" ]; then \
+		$(MAKE) --no-print-directory _lint-files; \
+	fi
+	@if [ "$(LINT_TF_ENABLE)" = "1" ]; then \
+		$(MAKE) --no-print-directory _lint-fmt; \
+	fi
+	@if [ "$(LINT_JL_ENABLE)" = "1" ]; then \
+		$(MAKE) --no-print-directory _lint-json; \
+	fi
 
 test: _pull-tf
 	@$(foreach example,\
@@ -63,21 +77,21 @@ test: _pull-tf
 		echo "------------------------------------------------------------"; \
 		echo "# Terraform init"; \
 		echo "------------------------------------------------------------"; \
-		if docker run $$(tty -s && echo "-it" || echo) --rm \
-		  -v "$(CURRENT_DIR):/t" --workdir "$${DOCKER_PATH}" \
-		  --network host \
+		if docker run $$(tty -s && echo "-it" || echo) --rm -v "$(CURRENT_DIR):/t" \
+		  --workdir "$${DOCKER_PATH}" --network host \
 		  hashicorp/terraform:$(TF_VERSION) \
 			init \
-				-upgrade=true \
+				-lock=false \
+				-upgrade \
 				-reconfigure \
 				-input=false \
-				-get=true; then \
+				-get=true; \
+		then \
 			echo "OK"; \
 		else \
 			echo "Failed"; \
-			docker run $$(tty -s && echo "-it" || echo) --rm \
-			  -v "$(CURRENT_DIR):/t" --workdir "$${DOCKER_PATH}" --entrypoint=rm \
-			  --network none \
+			docker run $$(tty -s && echo "-it" || echo) --rm -v "$(CURRENT_DIR):/t" \
+			  --workdir "$${DOCKER_PATH}" --network none --entrypoint=rm \
 			  hashicorp/terraform:$(TF_VERSION) -rf .terraform/ || true; \
 			exit 1; \
 		fi; \
@@ -85,21 +99,24 @@ test: _pull-tf
 		echo "------------------------------------------------------------"; \
 		echo "# Terraform validate"; \
 		echo "------------------------------------------------------------"; \
-		if docker run $$(tty -s && echo "-it" || echo) --rm \
-		  -v "$(CURRENT_DIR):/t" --workdir "$${DOCKER_PATH}" \
-		  --network host \
+		if docker run $$(tty -s && echo "-it" || echo) --rm -v "$(CURRENT_DIR):/t" \
+		  --workdir "$${DOCKER_PATH}" --network host \
 		  hashicorp/terraform:$(TF_VERSION) \
 			validate \
+				$(ARGS) \
 				.; then \
 			echo "OK"; \
+			docker run $$(tty -s && echo "-it" || echo) --rm -v "$(CURRENT_DIR):/t" \
+			  --workdir "$${DOCKER_PATH}" --network none --entrypoint=rm \
+			  hashicorp/terraform:$(TF_VERSION) -rf .terraform/ || true; \
 		else \
 			echo "Failed"; \
-			docker run $$(tty -s && echo "-it" || echo) --rm \
-			  -v "$(CURRENT_DIR):/t" --workdir "$${DOCKER_PATH}" --entrypoint=rm \
-			  --network host \
+			docker run $$(tty -s && echo "-it" || echo) --rm -v "$(CURRENT_DIR):/t" \
+			  --workdir "$${DOCKER_PATH}" --network none --entrypoint=rm \
 			  hashicorp/terraform:$(TF_VERSION) -rf .terraform/ || true; \
 			exit 1; \
 		fi; \
+		echo; \
 	)
 
 
@@ -110,12 +127,56 @@ _gen-main:
 	@echo "------------------------------------------------------------"
 	@echo "# Main module"
 	@echo "------------------------------------------------------------"
-	@if docker run --rm \
+	@if docker run $$(tty -s && echo "-it" || echo) --rm --network none \
 		-v $(CURRENT_DIR):/data \
-		-e DELIM_START='$(DELIM_START)' \
-		-e DELIM_CLOSE='$(DELIM_CLOSE)' \
+		-e DELIM_START='<!-- TFDOCS_HEADER_START -->' \
+		-e DELIM_CLOSE='<!-- TFDOCS_HEADER_END -->' \
 		cytopia/terraform-docs:$(TFDOCS_VERSION) \
-		terraform-docs-replace $(TFDOCS_ARGS) markdown README.md; then \
+		terraform-docs-replace --show header markdown tbl --indent 2 --sort README.md; then \
+		echo "OK"; \
+	else \
+		echo "Failed"; \
+		exit 1; \
+	fi
+	@if docker run $$(tty -s && echo "-it" || echo) --rm --network none \
+		-v $(CURRENT_DIR):/data \
+		-e DELIM_START='<!-- TFDOCS_PROVIDER_START -->' \
+		-e DELIM_CLOSE='<!-- TFDOCS_PROVIDER_END -->' \
+		cytopia/terraform-docs:$(TFDOCS_VERSION) \
+		terraform-docs-replace --show providers markdown tbl --indent 2 --sort README.md; then \
+		echo "OK"; \
+	else \
+		echo "Failed"; \
+		exit 1; \
+	fi
+	@if docker run $$(tty -s && echo "-it" || echo) --rm --network none \
+		-v $(CURRENT_DIR):/data \
+		-e DELIM_START='<!-- TFDOCS_REQUIREMENTS_START -->' \
+		-e DELIM_CLOSE='<!-- TFDOCS_REQUIREMENTS_END -->' \
+		cytopia/terraform-docs:$(TFDOCS_VERSION) \
+		terraform-docs-replace --show requirements markdown tbl --indent 2 --sort README.md; then \
+		echo "OK"; \
+	else \
+		echo "Failed"; \
+		exit 1; \
+	fi
+	@if docker run $$(tty -s && echo "-it" || echo) --rm --network none \
+		-v $(CURRENT_DIR):/data \
+		-e DELIM_START='<!-- TFDOCS_INPUTS_START -->' \
+		-e DELIM_CLOSE='<!-- TFDOCS_INPUTS_END -->' \
+		cytopia/terraform-docs:$(TFDOCS_VERSION) \
+		terraform-docs-replace --show inputs markdown doc --indent 2 $(TFDOCS_ARGS) README.md; then \
+		echo "OK"; \
+	else \
+		echo "Failed"; \
+		exit 1; \
+	fi
+	@if docker run $$(tty -s && echo "-it" || echo) --rm --network none \
+		-v $(CURRENT_DIR):/data \
+		-e DELIM_START='<!-- TFDOCS_OUTPUTS_START -->' \
+		-e DELIM_CLOSE='<!-- TFDOCS_OUTPUTS_END -->' \
+		cytopia/terraform-docs:$(TFDOCS_VERSION) \
+		terraform-docs-replace --show outputs markdown tbl --indent 2 --sort README.md; then \
 		echo "OK"; \
 	else \
 		echo "Failed"; \
@@ -129,7 +190,27 @@ _gen-examples:
 		echo "------------------------------------------------------------"; \
 		echo "# $${DOCKER_PATH}"; \
 		echo "------------------------------------------------------------"; \
-		if docker run --rm \
+		if docker run $$(tty -s && echo "-it" || echo) --rm --network none \
+			-v $(CURRENT_DIR):/data \
+			-e DELIM_START='$(DELIM_START)' \
+			-e DELIM_CLOSE='$(DELIM_CLOSE)' \
+			cytopia/terraform-docs:$(TFDOCS_VERSION) \
+			terraform-docs-replace $(TFDOCS_ARGS) markdown $${DOCKER_PATH}/README.md; then \
+			echo "OK"; \
+		else \
+			echo "Failed"; \
+			exit 1; \
+		fi; \
+	)
+
+_gen-modules:
+	@$(foreach module,\
+		$(TF_MODULES),\
+		DOCKER_PATH="modules/$(notdir $(patsubst %/,%,$(module)))"; \
+		echo "------------------------------------------------------------"; \
+		echo "# $${DOCKER_PATH}"; \
+		echo "------------------------------------------------------------"; \
+		if docker run $$(tty -s && echo "-it" || echo) --rm --network none \
 			-v $(CURRENT_DIR):/data \
 			-e DELIM_START='$(DELIM_START)' \
 			-e DELIM_CLOSE='$(DELIM_CLOSE)' \
@@ -147,12 +228,12 @@ _lint-files: _pull-fl
 	@echo "################################################################################"
 	@echo "# File-lint"
 	@echo "################################################################################"
-	@docker run --rm -v $(CURRENT_DIR):/data cytopia/file-lint:$(FL_VERSION) file-cr --text --ignore '$(FL_IGNORE)' --path .
-	@docker run --rm -v $(CURRENT_DIR):/data cytopia/file-lint:$(FL_VERSION) file-crlf --text --ignore '$(FL_IGNORE)' --path .
-	@docker run --rm -v $(CURRENT_DIR):/data cytopia/file-lint:$(FL_VERSION) file-trailing-single-newline --text --ignore '$(FL_IGNORE)' --path .
-	@docker run --rm -v $(CURRENT_DIR):/data cytopia/file-lint:$(FL_VERSION) file-trailing-space --text --ignore '$(FL_IGNORE)' --path .
-	@docker run --rm -v $(CURRENT_DIR):/data cytopia/file-lint:$(FL_VERSION) file-utf8 --text --ignore '$(FL_IGNORE)' --path .
-	@docker run --rm -v $(CURRENT_DIR):/data cytopia/file-lint:$(FL_VERSION) file-utf8-bom --text --ignore '$(FL_IGNORE)' --path .
+	@docker run $$(tty -s && echo "-it" || echo) --rm --network none -v $(CURRENT_DIR):/data cytopia/file-lint:$(FL_VERSION) file-cr --text --ignore '$(FL_IGNORE_PATHS)' --path .
+	@docker run $$(tty -s && echo "-it" || echo) --rm --network none -v $(CURRENT_DIR):/data cytopia/file-lint:$(FL_VERSION) file-crlf --text --ignore '$(FL_IGNORE_PATHS)' --path .
+	@docker run $$(tty -s && echo "-it" || echo) --rm --network none -v $(CURRENT_DIR):/data cytopia/file-lint:$(FL_VERSION) file-trailing-single-newline --text --ignore '$(FL_IGNORE_PATHS)' --path .
+	@docker run $$(tty -s && echo "-it" || echo) --rm --network none -v $(CURRENT_DIR):/data cytopia/file-lint:$(FL_VERSION) file-trailing-space --text --ignore '$(FL_IGNORE_PATHS)' --path .
+	@docker run $$(tty -s && echo "-it" || echo) --rm --network none -v $(CURRENT_DIR):/data cytopia/file-lint:$(FL_VERSION) file-utf8 --text --ignore '$(FL_IGNORE_PATHS)' --path .
+	@docker run $$(tty -s && echo "-it" || echo) --rm --network none -v $(CURRENT_DIR):/data cytopia/file-lint:$(FL_VERSION) file-utf8-bom --text --ignore '$(FL_IGNORE_PATHS)' --path .
 
 _lint-fmt: _pull-tf
 	@# Lint all Terraform files
@@ -163,8 +244,10 @@ _lint-fmt: _pull-tf
 	@echo "------------------------------------------------------------"
 	@echo "# *.tf files"
 	@echo "------------------------------------------------------------"
-	@if docker run $$(tty -s && echo "-it" || echo) --rm -v "$(CURRENT_DIR):/t:ro" --workdir "/t" hashicorp/terraform:$(TF_VERSION) \
-		fmt -check=true -diff=true -write=false -list=true .; then \
+	@if docker run $$(tty -s && echo "-it" || echo) --rm --network host \
+	  -v "$(CURRENT_DIR):/t:ro" --workdir "/t" \
+	  hashicorp/terraform:$(TF_VERSION) \
+		fmt -recursive -check=true -diff=true -write=true -list=true .; then \
 		echo "OK"; \
 	else \
 		echo "Failed"; \
@@ -174,8 +257,10 @@ _lint-fmt: _pull-tf
 	@echo "------------------------------------------------------------"
 	@echo "# *.tfvars files"
 	@echo "------------------------------------------------------------"
-	@if docker run --rm --entrypoint=/bin/sh -v "$(CURRENT_DIR):/t:ro" --workdir "/t" hashicorp/terraform:$(TF_VERSION) \
-		-c "find . -name '*.tfvars' -type f -print0 | xargs -0 -n1 terraform fmt -check=true -write=false -diff=true -list=true"; then \
+	@if docker run $$(tty -s && echo "-it" || echo) --rm --network host \
+	  --entrypoint=/bin/sh -v "$(CURRENT_DIR):/t:ro" --workdir "/t" \
+	  hashicorp/terraform:$(TF_VERSION) \
+		-c "find . -name '*.tfvars' -type f -print0 | xargs -0 -n1 terraform fmt -check=true -write=true -diff=true -list=true"; then \
 		echo "OK"; \
 	else \
 		echo "Failed"; \
