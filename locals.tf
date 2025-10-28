@@ -219,4 +219,18 @@ locals {
       tags    = zone.tags
     }
   }
+
+  zone_authorizations = {
+    for pair in flatten([
+      for zone in var.private_root_zones : [
+        for auth_id in coalesce(zone.vpc_association_authorization, []) : {
+          key = "${zone.name}-${auth_id}"
+          value = {
+            zone    = zone.name
+            auth_id = auth_id
+          }
+        }
+      ]
+    ]) : pair.key => pair.value
+  }
 }

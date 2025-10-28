@@ -130,3 +130,10 @@ resource "aws_route53_zone" "private_root_zones" {
 
   depends_on = [data.aws_region.current]
 }
+
+resource "aws_route53_vpc_association_authorization" "this" {
+  for_each = local.zone_authorizations
+
+  vpc_id  = each.value["auth_id"]
+  zone_id = aws_route53_zone.private_root_zones[each.value["zone"]].id
+}
