@@ -164,50 +164,140 @@ terraform import 'aws_route53_zone.public_delegated_secondary_zones["sub.www.exa
 * [public-subdomains](examples/public-subdomains)
 
 
-<!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
+<!-- TFDOCS_HEADER_START -->
+
+
+<!-- TFDOCS_HEADER_END -->
+
+<!-- TFDOCS_PROVIDER_START -->
+## Providers
+
+| Name | Version |
+|------|---------|
+| <a name="provider_aws"></a> [aws](#provider\_aws) | >= 6.18 |
+
+<!-- TFDOCS_PROVIDER_END -->
+
+<!-- TFDOCS_REQUIREMENTS_START -->
 ## Requirements
 
 | Name | Version |
 |------|---------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.3 |
-| <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 5 |
+| <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 6.18 |
 
-## Providers
+<!-- TFDOCS_REQUIREMENTS_END -->
 
-| Name | Version |
-|------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | >= 5 |
+<!-- TFDOCS_INPUTS_START -->
+## Required Inputs
 
-## Modules
+No required inputs.
 
-No modules.
+## Optional Inputs
 
-## Resources
+The following input variables are optional (have default values):
 
-| Name | Type |
-|------|------|
-| [aws_route53_delegation_set.delegation_sets](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route53_delegation_set) | resource |
-| [aws_route53_record.public_delegated_secondary_ns_records](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route53_record) | resource |
-| [aws_route53_record.public_delegated_tertiary_ns_records](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route53_record) | resource |
-| [aws_route53_vpc_association_authorization.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route53_vpc_association_authorization) | resource |
-| [aws_route53_zone.private_root_zones](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route53_zone) | resource |
-| [aws_route53_zone.public_delegated_secondary_zones](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route53_zone) | resource |
-| [aws_route53_zone.public_delegated_tertiary_zones](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route53_zone) | resource |
-| [aws_route53_zone.public_root_zones](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route53_zone) | resource |
-| [aws_region.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/region) | data source |
+### <a name="input_delegation_sets"></a> [delegation\_sets](#input\_delegation\_sets)
 
-## Inputs
+Description: A list of delegation sets to create. You only need to specify the alias names that can then be referenced by other variables in this module via this unique name. A delegation set is a set of four authoritative name servers that you can use with more than one hosted zone. By default, Route 53 assigns a random selection of name servers to each new hosted zone. To make it easier to migrate DNS service to Route 53 for a large number of domains, you can create a reusable delegation set and then associate the reusable delegation set with new hosted zones.
 
-| Name | Description | Type | Default | Required |
-|------|-------------|------|---------|:--------:|
-| <a name="input_comment"></a> [comment](#input\_comment) | Default comment to add to all resources. | `string` | `"Managed by Terraform"` | no |
-| <a name="input_delegation_sets"></a> [delegation\_sets](#input\_delegation\_sets) | A list of delegation sets to create. You only need to specify the alias names that can then be referenced by other variables in this module via this unique name. A delegation set is a set of four authoritative name servers that you can use with more than one hosted zone. By default, Route 53 assigns a random selection of name servers to each new hosted zone. To make it easier to migrate DNS service to Route 53 for a large number of domains, you can create a reusable delegation set and then associate the reusable delegation set with new hosted zones. | `list(string)` | `[]` | no |
-| <a name="input_private_root_zones"></a> [private\_root\_zones](#input\_private\_root\_zones) | Private Route53 root zone (also allows subdomain if this is your root starting point). Note, by default the default VPC will always be attached, even if vpc\_ids or vpc\_tags are empty. | <pre>list(object({<br>    name = string,<br>    vpc_ids = optional(list(object({<br>      id     = string,<br>      region = string,<br>    })), []),<br>    vpc_association_authorization = optional(set(string))<br>    tags                          = optional(map(string), {})<br>  }))</pre> | `[]` | no |
-| <a name="input_public_delegated_secondary_zones"></a> [public\_delegated\_secondary\_zones](#input\_public\_delegated\_secondary\_zones) | A list of public Route53 delegated secondary zones. Each item must specify its 'parent' by name, which must match the name defined in the 'public\_root\_zones' variables and must also be exactly one level deeper than the corresponding root zone item. By doing so, this module will automatically add nameservers into the root zone to create the delegation. You can also attach a delegation\_set to this zone by its reference name (if it has been defined in the 'delegation\_sets' list) or set it to 'null' to use no delegation set. Additionally you can also define your own name servers for this zone by specifying them in the `ns_list` list or just leave the list empty to use AWS default name server. | <pre>list(object({<br>    name           = string,<br>    parent         = string,<br>    ns_ttl         = optional(number, 3600),<br>    ns_list        = optional(list(string), []),<br>    delegation_set = optional(string),<br>    tags           = optional(map(string), {})<br>  }))</pre> | `[]` | no |
-| <a name="input_public_delegated_tertiary_zones"></a> [public\_delegated\_tertiary\_zones](#input\_public\_delegated\_tertiary\_zones) | A list of public Route53 delegated tertiary zones. Each item must specify its 'parent' by name, which must match the name defined in the 'public\_delegated\_secondary\_zones' variables and must also be exactly one level deeper than the corresponding root zone item. By doing so, this module will automatically add nameservers into the root zone to create the delegation. You can also attach a delegation\_set to this zone by its reference name (if it has been defined in the 'delegation\_sets' list) or set it to 'null' to use no delegation set. Additionally you can also define your own name servers for this zone by specifying them in the `ns_list` list or just leave the list empty to use AWS default name server. | <pre>list(object({<br>    name           = string,<br>    parent         = string,<br>    ns_ttl         = optional(number, 3600),<br>    ns_list        = optional(list(string), []),<br>    delegation_set = optional(string),<br>    tags           = optional(map(string), {})<br>  }))</pre> | `[]` | no |
-| <a name="input_public_root_zones"></a> [public\_root\_zones](#input\_public\_root\_zones) | A list of public Route53 root zones. A 'root zone' can be anything from a tld to any level of subdomain, if and only if this is your root starting point for this (sub-)domain on the current AWS account. You can also attach a delegation\_set to this root zone by its reference name (if it has been defined in the 'delegation\_sets' list) or set it to 'null' to use no delegation set. | <pre>list(object({<br>    name           = string,<br>    delegation_set = optional(string),<br>    tags           = optional(map(string), {})<br>  }))</pre> | `[]` | no |
-| <a name="input_tags"></a> [tags](#input\_tags) | Default tags to additionally apply to all resources. | `map(string)` | `{}` | no |
+Type: `list(string)`
 
+Default: `[]`
+
+### <a name="input_public_root_zones"></a> [public\_root\_zones](#input\_public\_root\_zones)
+
+Description: A list of public Route53 root zones. A 'root zone' can be anything from a tld to any level of subdomain, if and only if this is your root starting point for this (sub-)domain on the current AWS account. You can also attach a delegation\_set to this root zone by its reference name (if it has been defined in the 'delegation\_sets' list) or set it to 'null' to use no delegation set.
+
+Type:
+
+```hcl
+list(object({
+    name           = string,
+    delegation_set = optional(string),
+    tags           = optional(map(string), {})
+  }))
+```
+
+Default: `[]`
+
+### <a name="input_public_delegated_secondary_zones"></a> [public\_delegated\_secondary\_zones](#input\_public\_delegated\_secondary\_zones)
+
+Description: A list of public Route53 delegated secondary zones. Each item must specify its 'parent' by name, which must match the name defined in the 'public\_root\_zones' variables and must also be exactly one level deeper than the corresponding root zone item. By doing so, this module will automatically add nameservers into the root zone to create the delegation. You can also attach a delegation\_set to this zone by its reference name (if it has been defined in the 'delegation\_sets' list) or set it to 'null' to use no delegation set. Additionally you can also define your own name servers for this zone by specifying them in the `ns_list` list or just leave the list empty to use AWS default name server.
+
+Type:
+
+```hcl
+list(object({
+    name           = string,
+    parent         = string,
+    ns_ttl         = optional(number, 3600),
+    ns_list        = optional(list(string), []),
+    delegation_set = optional(string),
+    tags           = optional(map(string), {})
+  }))
+```
+
+Default: `[]`
+
+### <a name="input_public_delegated_tertiary_zones"></a> [public\_delegated\_tertiary\_zones](#input\_public\_delegated\_tertiary\_zones)
+
+Description: A list of public Route53 delegated tertiary zones. Each item must specify its 'parent' by name, which must match the name defined in the 'public\_delegated\_secondary\_zones' variables and must also be exactly one level deeper than the corresponding root zone item. By doing so, this module will automatically add nameservers into the root zone to create the delegation. You can also attach a delegation\_set to this zone by its reference name (if it has been defined in the 'delegation\_sets' list) or set it to 'null' to use no delegation set. Additionally you can also define your own name servers for this zone by specifying them in the `ns_list` list or just leave the list empty to use AWS default name server.
+
+Type:
+
+```hcl
+list(object({
+    name           = string,
+    parent         = string,
+    ns_ttl         = optional(number, 3600),
+    ns_list        = optional(list(string), []),
+    delegation_set = optional(string),
+    tags           = optional(map(string), {})
+  }))
+```
+
+Default: `[]`
+
+### <a name="input_private_root_zones"></a> [private\_root\_zones](#input\_private\_root\_zones)
+
+Description: Private Route53 root zone (also allows subdomain if this is your root starting point). Note, by default the default VPC will always be attached, even if vpc\_ids or vpc\_tags are empty.
+
+Type:
+
+```hcl
+list(object({
+    name = string,
+    vpc_ids = optional(list(object({
+      id     = string,
+      region = string,
+    })), []),
+    vpc_association_authorization = optional(set(string))
+    tags                          = optional(map(string), {})
+  }))
+```
+
+Default: `[]`
+
+### <a name="input_tags"></a> [tags](#input\_tags)
+
+Description: Default tags to additionally apply to all resources.
+
+Type: `map(string)`
+
+Default: `{}`
+
+### <a name="input_comment"></a> [comment](#input\_comment)
+
+Description: Default comment to add to all resources.
+
+Type: `string`
+
+Default: `"Managed by Terraform"`
+
+<!-- TFDOCS_INPUTS_END -->
+
+<!-- TFDOCS_OUTPUTS_START -->
 ## Outputs
 
 | Name | Description |
@@ -221,7 +311,7 @@ No modules.
 | <a name="output_public_delegated_tertiary_zones"></a> [public\_delegated\_tertiary\_zones](#output\_public\_delegated\_tertiary\_zones) | Created public delegated tertiary zones. |
 | <a name="output_public_root_zones"></a> [public\_root\_zones](#output\_public\_root\_zones) | Created public root zones. |
 
-<!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
+<!-- TFDOCS_OUTPUTS_END -->
 
 
 ## Example output
@@ -323,11 +413,11 @@ public_delegated_secondary_zones = {
 
 ## Authors
 
-Module managed by [cytopia](https://github.com/cytopia).
+Forked from [cytopia](https://github.com/cytopia) [terraform-aws-route53-zone](https://github.com/cytopia/terraform-aws-route53-zone).
 
 
 ## License
 
-[MIT License](LICENSE)
+**[MIT License](LICENSE)**
 
-Copyright (c) 2018 [cytopia](https://github.com/cytopia)
+Copyright (c) 2021-2025 **[Flaconi GmbH](https://github.com/flaconi)**
